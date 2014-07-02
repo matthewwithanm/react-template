@@ -1,0 +1,22 @@
+{
+  "name": "react-template",
+  "version": "0.0.1",
+  "authors": [
+    "Matthew Dapena-Tretter <m@tthewwithanm.com>"
+  ],
+  "description": "Organized rendering.",
+  "main": "browser-builds/react-template.js",
+  "keywords": [
+    "react",
+    "reactjs"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/matthewwithanm/react-template.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
