@@ -113,5 +113,6 @@ module.exports = function(grunt) {
     // browser tests.
     GLOBAL.chai = require('chai');
     GLOBAL.ReactTemplate = require('./lib/index');
+    GLOBAL.React = require('react');
   });
 };
