@@ -76,4 +76,18 @@ describe('react-template', function () {
     });
     template({hasProp: true});
   });
+
+  it('gets bound methods', function(done) {
+    var template = ReactTemplate.create({
+      doSomething: function(expectedScope) {
+        assert.equal(this, expectedScope);
+        done();
+        return div();
+      },
+      render: function() {
+        return this.doSomething.call(null, this);
+      }
+    });
+    template();
+  });
 });
