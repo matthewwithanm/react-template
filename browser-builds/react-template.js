@@ -118,6 +118,13 @@ function createTemplate(spec) {
     return renderedComponent;
   };
 
+  if (spec.statics) {
+    for (var k in spec.statics) {
+      if (!spec.statics.hasOwnProperty(k)) continue;
+      template[k] = spec.statics[k];
+    }
+  }
+
   return template;
 }
 

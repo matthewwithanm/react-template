@@ -1,6 +1,6 @@
 {
   "name": "react-template",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Organized rendering.",
   "main": "./lib/index.js",
   "directories": {
