@@ -6,8 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-    "react": "~0.10.0"
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "*"
   },
   "devDependencies": {
     "mocha": "~1.18.2",
