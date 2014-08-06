@@ -90,4 +90,14 @@ describe('react-template', function () {
     });
     template();
   });
+
+  it('gets statics', function() {
+    var template = ReactTemplate.create({
+      statics: {
+        SOMETHING: true
+      },
+      render: function() { return div(); }
+    });
+    assert(template.SOMETHING);
+  });
 });
