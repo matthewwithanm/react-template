@@ -6,7 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "xtend": "~4.0.0"
+  },
   "peerDependencies": {
     "react": "*"
   },
