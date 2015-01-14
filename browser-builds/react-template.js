@@ -6,7 +6,7 @@ var __DEV__ = true; // TODO: Replace this based on environment.
 var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null);
 var invariant = _dereq_('react/lib/invariant');
 var warning = _dereq_('react/lib/warning');
-var merge = _dereq_('react/lib/merge');
+var extend = _dereq_('xtend');
 
 /**
  * Updates the `children` attribute of the provided props object to accurately
@@ -18,7 +18,7 @@ function formatProps(props, children) {
   if (props == null) {
     props = {};
   } else {
-    props = merge(props);
+    props = extend(props);
   }
 
   var childrenLength = arguments.length - 1;
@@ -109,13 +109,13 @@ function createTemplate(spec) {
     }
 
     // Call the render method.
-    var renderedComponent = ctx.render();
+    var el = ctx.render();
     invariant(
-      React.isValidComponent(renderedComponent),
+      (React.isValidElement || React.isValidComponent)(el),
       'A valid ReactComponent must be returned. You may have ' +
       'returned undefined, an array or some other invalid object.'
     );
-    return renderedComponent;
+    return el;
   };
 
   if (spec.statics) {
@@ -133,7 +133,7 @@ module.exports = {
 };
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"react/lib/invariant":5,"react/lib/merge":7,"react/lib/warning":10}],2:[function(_dereq_,module,exports){
+},{"react/lib/invariant":5,"react/lib/warning":6,"xtend":7}],2:[function(_dereq_,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -370,294 +370,6 @@ module.exports = invariant;
 },{"JkpR2F":2}],6:[function(_dereq_,module,exports){
 (function (process){
 /**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule keyMirror
- * @typechecks static-only
- */
-
-"use strict";
-
-var invariant = _dereq_("./invariant");
-
-/**
- * Constructs an enumeration with keys equal to their value.
- *
- * For example:
- *
- *   var COLORS = keyMirror({blue: null, red: null});
- *   var myColor = COLORS.blue;
- *   var isColorValid = !!COLORS[myColor];
- *
- * The last line could not be performed if the values of the generated enum were
- * not equal to their keys.
- *
- *   Input:  {key1: val1, key2: val2}
- *   Output: {key1: key1, key2: key2}
- *
- * @param {object} obj
- * @return {object}
- */
-var keyMirror = function(obj) {
-  var ret = {};
-  var key;
-  ("production" !== process.env.NODE_ENV ? invariant(
-    obj instanceof Object && !Array.isArray(obj),
-    'keyMirror(...): Argument must be an object.'
-  ) : invariant(obj instanceof Object && !Array.isArray(obj)));
-  for (key in obj) {
-    if (!obj.hasOwnProperty(key)) {
-      continue;
-    }
-    ret[key] = key;
-  }
-  return ret;
-};
-
-module.exports = keyMirror;
-
-}).call(this,_dereq_("JkpR2F"))
-},{"./invariant":5,"JkpR2F":2}],7:[function(_dereq_,module,exports){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule merge
- */
-
-"use strict";
-
-var mergeInto = _dereq_("./mergeInto");
-
-/**
- * Shallow merges two structures into a return value, without mutating either.
- *
- * @param {?object} one Optional object with properties to merge from.
- * @param {?object} two Optional object with properties to merge from.
- * @return {object} The shallow extension of one by two.
- */
-var merge = function(one, two) {
-  var result = {};
-  mergeInto(result, one);
-  mergeInto(result, two);
-  return result;
-};
-
-module.exports = merge;
-
-},{"./mergeInto":9}],8:[function(_dereq_,module,exports){
-(function (process){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule mergeHelpers
- *
- * requiresPolyfills: Array.isArray
- */
-
-"use strict";
-
-var invariant = _dereq_("./invariant");
-var keyMirror = _dereq_("./keyMirror");
-
-/**
- * Maximum number of levels to traverse. Will catch circular structures.
- * @const
- */
-var MAX_MERGE_DEPTH = 36;
-
-/**
- * We won't worry about edge cases like new String('x') or new Boolean(true).
- * Functions are considered terminals, and arrays are not.
- * @param {*} o The item/object/value to test.
- * @return {boolean} true iff the argument is a terminal.
- */
-var isTerminal = function(o) {
-  return typeof o !== 'object' || o === null;
-};
-
-var mergeHelpers = {
-
-  MAX_MERGE_DEPTH: MAX_MERGE_DEPTH,
-
-  isTerminal: isTerminal,
-
-  /**
-   * Converts null/undefined values into empty object.
-   *
-   * @param {?Object=} arg Argument to be normalized (nullable optional)
-   * @return {!Object}
-   */
-  normalizeMergeArg: function(arg) {
-    return arg === undefined || arg === null ? {} : arg;
-  },
-
-  /**
-   * If merging Arrays, a merge strategy *must* be supplied. If not, it is
-   * likely the caller's fault. If this function is ever called with anything
-   * but `one` and `two` being `Array`s, it is the fault of the merge utilities.
-   *
-   * @param {*} one Array to merge into.
-   * @param {*} two Array to merge from.
-   */
-  checkMergeArrayArgs: function(one, two) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      Array.isArray(one) && Array.isArray(two),
-      'Tried to merge arrays, instead got %s and %s.',
-      one,
-      two
-    ) : invariant(Array.isArray(one) && Array.isArray(two)));
-  },
-
-  /**
-   * @param {*} one Object to merge into.
-   * @param {*} two Object to merge from.
-   */
-  checkMergeObjectArgs: function(one, two) {
-    mergeHelpers.checkMergeObjectArg(one);
-    mergeHelpers.checkMergeObjectArg(two);
-  },
-
-  /**
-   * @param {*} arg
-   */
-  checkMergeObjectArg: function(arg) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      !isTerminal(arg) && !Array.isArray(arg),
-      'Tried to merge an object, instead got %s.',
-      arg
-    ) : invariant(!isTerminal(arg) && !Array.isArray(arg)));
-  },
-
-  /**
-   * Checks that a merge was not given a circular object or an object that had
-   * too great of depth.
-   *
-   * @param {number} Level of recursion to validate against maximum.
-   */
-  checkMergeLevel: function(level) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      level < MAX_MERGE_DEPTH,
-      'Maximum deep merge depth exceeded. You may be attempting to merge ' +
-      'circular structures in an unsupported way.'
-    ) : invariant(level < MAX_MERGE_DEPTH));
-  },
-
-  /**
-   * Checks that the supplied merge strategy is valid.
-   *
-   * @param {string} Array merge strategy.
-   */
-  checkArrayStrategy: function(strategy) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      strategy === undefined || strategy in mergeHelpers.ArrayStrategies,
-      'You must provide an array strategy to deep merge functions to ' +
-      'instruct the deep merge how to resolve merging two arrays.'
-    ) : invariant(strategy === undefined || strategy in mergeHelpers.ArrayStrategies));
-  },
-
-  /**
-   * Set of possible behaviors of merge algorithms when encountering two Arrays
-   * that must be merged together.
-   * - `clobber`: The left `Array` is ignored.
-   * - `indexByIndex`: The result is achieved by recursively deep merging at
-   *   each index. (not yet supported.)
-   */
-  ArrayStrategies: keyMirror({
-    Clobber: true,
-    IndexByIndex: true
-  })
-
-};
-
-module.exports = mergeHelpers;
-
-}).call(this,_dereq_("JkpR2F"))
-},{"./invariant":5,"./keyMirror":6,"JkpR2F":2}],9:[function(_dereq_,module,exports){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule mergeInto
- * @typechecks static-only
- */
-
-"use strict";
-
-var mergeHelpers = _dereq_("./mergeHelpers");
-
-var checkMergeObjectArg = mergeHelpers.checkMergeObjectArg;
-
-/**
- * Shallow merges two structures by mutating the first parameter.
- *
- * @param {object} one Object to be merged into.
- * @param {?object} two Optional object with properties to merge from.
- */
-function mergeInto(one, two) {
-  checkMergeObjectArg(one);
-  if (two != null) {
-    checkMergeObjectArg(two);
-    for (var key in two) {
-      if (!two.hasOwnProperty(key)) {
-        continue;
-      }
-      one[key] = two[key];
-    }
-  }
-}
-
-module.exports = mergeInto;
-
-},{"./mergeHelpers":8}],10:[function(_dereq_,module,exports){
-(function (process){
-/**
  * Copyright 2014 Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -707,6 +419,25 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = warning;
 
 }).call(this,_dereq_("JkpR2F"))
-},{"./emptyFunction":4,"JkpR2F":2}]},{},[1])
+},{"./emptyFunction":4,"JkpR2F":2}],7:[function(_dereq_,module,exports){
+module.exports = extend
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}]},{},[1])
 (1)
 });
